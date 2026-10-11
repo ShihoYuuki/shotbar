@@ -8,6 +8,8 @@ macOS のメニューバーに常駐し、直近のスクリーンショット�
 - 「コピー」はファイル（file URL）と画像データを同じ項目に載せるので、Finder / Slack にはファイルとして、画像を受けるアプリには画像として貼れる。画面収録はファイルだけ
 - 「パスをコピー」は絶対パスの文字列。ターミナルや Claude Code に貼る用
 - 「ログイン時に起動」はメニューのトグル（`SMAppService`）
+- **クリップボードに撮ったもの**（⌃⌘⇧3 / ⌃⌘⇧4、⌘⇧5 の「クリップボードにコピー」）も拾う。ファイルも URL も文字も無い画像だけの項目をクリップボードに見つけたら `~/Library/Application Support/ShotBar/clipboard/` に PNG で残し、同じメニューに「クリップボード HH:mm」として並べる。残す日数はメニューで 1 / 3 / 7 / 14 日（既定 7 日）。Preview などで画像だけをコピーしたものも同じ扱いになる。初回に macOS の「ペーストボードへのアクセス」の確認が出たら許可する（システム設定 → プライバシーとセキュリティで「常に許可」にできる）
+- メニューバーの位置: macOS 27 は幅が足りないと左端の項目から「«」の裏に畳む。初回起動では Control Center のすぐ左あたりに置く。動かすのは ⌘ドラッグ
 
 ## 入れる
 
@@ -25,6 +27,7 @@ Xcode（Swift 5.9 以上、macOS 14 以上）が要る。署名は ad hoc なの
 |---|---|
 | `Sources/ShotBar/AppDelegate.swift` | NSStatusItem とメニュー。開く・コピー・パス・Finder・ログイン時起動 |
 | `Sources/ShotBar/CaptureStore.swift` | 保存先の解決、新しい順の一覧、フォルダ監視（kqueue） |
+| `Sources/ShotBar/ClipboardStore.swift` | クリップボードの監視（1 秒ごとに changeCount）、画像だけの項目の保存、日数での掃除 |
 | `Sources/ShotBar/Thumbnails.swift` | QuickLookThumbnailing でサムネイル |
 | `Resources/Info.plist` | `LSUIElement`（Dock に出さない）、Bundle ID `com.bytask.shotbar` |
 | `scripts/build.sh` | `swift build -c release` → `dist/ShotBar.app` → `codesign --sign -` |

@@ -1,9 +1,14 @@
 import Foundation
 
+enum CaptureSource {
+    case file, clipboard
+}
+
 struct Capture {
     let url: URL
     let date: Date
     let isVideo: Bool
+    let source: CaptureSource
 }
 
 /// 純正のスクリーンショット・画面収録の保存先を読み、直近のファイルを返す。
@@ -54,7 +59,7 @@ final class CaptureStore {
                 guard isVideo || CaptureStore.imageExts.contains(ext) else { continue }
                 guard let rv = try? url.resourceValues(forKeys: keys), rv.isRegularFile == true else { continue }
                 let date = rv.creationDate ?? rv.addedToDirectoryDate ?? rv.contentModificationDate ?? .distantPast
-                items.append(Capture(url: url, date: date, isVideo: isVideo))
+                items.append(Capture(url: url, date: date, isVideo: isVideo, source: .file))
             }
         }
         items.sort { $0.date > $1.date }
