@@ -9,14 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let limit = 10
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 初回は右寄り（Control Center のすぐ左あたり）に置く。macOS 27 は幅が足りないと左端から畳むので、
-        // 新しい項目の既定位置（左端）だと「«」の裏に隠れる。以後の位置は ⌘ドラッグで動かした値が残る
-        let positionKey = "NSStatusItem Preferred Position shotbar"
-        if UserDefaults.standard.object(forKey: positionKey) == nil {
-            UserDefaults.standard.set(260, forKey: positionKey)
-        }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.autosaveName = "shotbar"
+        statusItem.autosaveName = NSStatusItem.AutosaveName(Self.placeStatusItemAtRight())
         if let button = statusItem.button {
             let image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "ShotBar")
             image?.isTemplate = true
@@ -33,6 +27,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         rebuild()
+    }
+
+    /// macOS 27 の MenuBarAgent は、一度置いた項目の並びを bundle id + autosave 名で覚えていて、
+    /// `NSStatusItem Preferred Position` は初めて見る名前のときだけ効く（1 が右端、大きいほど左。2026-10-11 実測）。
+    /// 幅が足りないと左端の項目から「«」の裏に畳まれるので、起動のたびに新しい名前で登録して右端に置き直し、
+    /// 前の名前の記録は消す。`defaults write com.bytask.shotbar keepStatusItemPosition -bool true` で
+    /// 固定名 "shotbar" になり、⌘ドラッグで動かした位置が残る。
+    private static func placeStatusItemAtRight() -> String {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "keepStatusItemPosition") { return "shotbar" }
+        let count = defaults.integer(forKey: "statusItemLaunchCount") + 1
+        defaults.set(count, forKey: "statusItemLaunchCount")
+        let name = "shotbar-\(count)"
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("NSStatusItem ") && key.contains(" shotbar") && !key.hasSuffix(" \(name)") {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.removeObject(forKey: "statusItemAutosaveName")
+        defaults.set(1, forKey: "NSStatusItem Preferred Position \(name)")
+        return name
     }
 
     // MARK: - メニュー
